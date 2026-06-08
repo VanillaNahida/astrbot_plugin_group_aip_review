@@ -1,5 +1,6 @@
 import asyncio
 import time
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -9,6 +10,8 @@ from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Image, Plain, Node
 from astrbot.api.star import Context, Star, register
+
+from .web import AuditWebController
 
 # 检查并导入第三方依赖
 try:
@@ -271,6 +274,11 @@ class GroupAipReviewPlugin(Star):
         self.baidu_api = None
         self.audit_parser = AuditResultParser()
         self.violation_manager = ViolationManager()
+        
+        # 初始化 Web 管理页面
+        plugin_dir = Path(context.plugin_dir) if hasattr(context, "plugin_dir") else Path(__file__).parent
+        self.web = AuditWebController(context, config, plugin_dir)
+        self.web.register_routes()
         
         # 初始化百度API
         self._init_baidu_api()
@@ -669,6 +677,9 @@ class GroupAipReviewPlugin(Star):
         group_name = event.message_obj.raw_message.get("group_name", "未知群") if event.message_obj.raw_message else "未知群"
         user_nickname = event.message_obj.raw_message.get("sender", {}).get("nickname", "未知用户") if event.message_obj.raw_message and event.message_obj.raw_message.get("sender") else "未知用户"
         user_id = event.message_obj.raw_message.get("sender", {}).get("user_id", "未知用户号") if event.message_obj.raw_message and event.message_obj.raw_message.get("sender") else "未知用户号"
+        
+        # 获取群组配置
+        group_config = self.get_group_config(group_id)
                 
         # 提取消息内容
         message_text = event.message_str
@@ -680,11 +691,13 @@ class GroupAipReviewPlugin(Star):
                 image_urls.append(component.url)
         
         # 文本审核
-        if self.config.get("enable_text_censor", True) and message_text:
+        enable_text_censor = group_config.get("enable_text_censor", self.config.get("enable_text_censor", True))
+        if enable_text_censor and message_text:
             await self._audit_text(event, message_text, group_name, user_nickname, user_id)
         
         # 图片审核
-        if self.config.get("enable_image_censor", True) and image_urls:
+        enable_image_censor = group_config.get("enable_image_censor", self.config.get("enable_image_censor", True))
+        if enable_image_censor and image_urls:
             for image_url in image_urls:
                 await self._audit_image(event, image_url, group_name, user_nickname, user_id)
     
@@ -886,10 +899,15 @@ class GroupAipReviewPlugin(Star):
         
         config_info += "当前使用的配置：\n"
         config_info += f"- 配置类型：{'群单独配置' if has_group_config else '全局默认配置'}\n"
-        config_info += f"- 文本审核：{'✅启用' if self.config.get('enable_text_censor', True) else '❌禁用'}\n"
-        config_info += f"- 图片审核：{'✅启用' if self.config.get('enable_image_censor', True) else '❌禁用'}\n"
-        config_info += f"- 禁言时长：{self._format_mute_duration(group_config.get('mute_duration', 3600))}\n"
+        # 审核开关配置
+        enable_text_censor = group_config.get("enable_text_censor", self.config.get("enable_text_censor", True))
+        enable_image_censor = group_config.get("enable_image_censor", self.config.get("enable_image_censor", True))
+        # 提示消息        
+        config_info += f"- 文本审核：{'✅启用' if enable_text_censor else '❌禁用'}\n"
+        config_info += f"- 图片审核：{'✅启用' if enable_image_censor else '❌禁用'}\n"
         config_info += f"- 审核规则ID：{group_config.get('rule_id', 'default')}\n"
+        config_info += f"- 禁言阈值：{group_config.get('single_user_violation_threshold', 3)}次违规后禁言\n"
+        config_info += f"- 禁言时长：{self._format_mute_duration(group_config.get('mute_duration', 3600))}\n"
         config_info += f"- 是否启用踢人：{'✅是' if group_config.get('kick_user', False) else '❌否'}\n"
         config_info += f"- 踢人阈值：{group_config.get('kick_user_threshold', 5)}次违规后踢出\n"
         config_info += f"- 是否踢出并拉黑用户：{'✅是' if group_config.get('is_kick_user_and_block', False) else '❌否'}\n"
