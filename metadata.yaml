@@ -1,6 +1,6 @@
 name: astrbot_plugin_group_aip_review # 插件唯一识别名，以 astrbot_plugin_ 前缀开头
 display_name: 群消息内容安全审核插件 # 用于展示的名字
 desc: 让我康康你的消息正不正常喵？基于百度内容审核API对群聊消息进行实时审查喵，支持文本和图片审核喵，自动处置违规内容并通知管理员喵。 # 插件简短描述
-version: v1.1.0 # 插件版本号。格式：v1.1.1 或者 v1.1
+version: v1.0.2 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: 香草味的纳西妲喵（VanillaNahida） # 作者
 repo: https://github.com/VanillaNahida/astrbot_plugin_group_aip_review # 插件的仓库地址
