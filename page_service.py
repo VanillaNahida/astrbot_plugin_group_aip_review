@@ -65,7 +65,7 @@ class AuditPageService:
                 "global": self.global_schema,
             },
             "groups": groups,
-            "enabled_groups": self.config.get("enabled_groups", []),
+            "enabled_groups": self._get_derived_enabled_groups(),
             "global_config": self._get_global_config(),
         }
 
@@ -133,9 +133,6 @@ class AuditPageService:
 
         self._save_group_configs(group_configs)
 
-        # Add to enabled_groups
-        self._add_to_enabled_groups(group_id)
-
         for cfg in group_configs:
             if cfg.get("group_id") == group_id:
                 return self._build_group_entry(cfg)
@@ -190,7 +187,6 @@ class AuditPageService:
         group_configs = self._get_group_configs()
         group_configs = [c for c in group_configs if c.get("group_id") != group_id]
         self._save_group_configs(group_configs)
-        self._remove_from_enabled_groups(group_id)
 
     # ── entry builders (list) ──
 
@@ -282,19 +278,15 @@ class AuditPageService:
 
     # ── helpers ──
 
-    def _add_to_enabled_groups(self, group_id: str) -> None:
-        enabled: list = list(self.config.get("enabled_groups", []))
-        if group_id not in enabled:
-            enabled.append(group_id)
-            self.config["enabled_groups"] = enabled
-            self.config.save_config()
-
-    def _remove_from_enabled_groups(self, group_id: str) -> None:
-        enabled: list = list(self.config.get("enabled_groups", []))
-        if group_id in enabled:
-            enabled.remove(group_id)
-            self.config["enabled_groups"] = enabled
-            self.config.save_config()
+    def _get_derived_enabled_groups(self) -> list[str]:
+        """Derive enabled groups from group_custom configs where enabled is true."""
+        enabled_groups = []
+        for cfg in self._get_group_configs():
+            if cfg.get("enabled", True):
+                group_id = cfg.get("group_id", "")
+                if group_id:
+                    enabled_groups.append(group_id)
+        return enabled_groups
 
     @staticmethod
     def _find_live_group(

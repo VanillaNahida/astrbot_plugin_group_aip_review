@@ -26,12 +26,6 @@
       }
     }
   },
-  "enabled_groups": {
-    "description": "启用插件的群号列表",
-    "type": "list",
-    "default": [],
-    "hint": "填入需要开启审核的群号（纯数字）。如果留空（默认），则不对任何群进行审核。"
-  },
   "enable_text_censor": {
     "description": "是否启用文本审核",
     "type": "bool",
@@ -144,6 +138,12 @@
                 "type": "string",
                 "hint": "要配置的群号（纯数字）"
               },
+              "enabled": {
+                "description": "是否启用审核",
+                "type": "bool",
+                "default": true,
+                "hint": "关闭后此群的审核功能将完全禁用"
+              },
               "notify_group_id": {
                 "description": "通知群号",
                 "type": "string",
@@ -220,6 +220,12 @@
                 "type": "string",
                 "hint": "要配置的群号（纯数字）"
               },
+              "enabled": {
+                "description": "是否启用审核",
+                "type": "bool",
+                "default": true,
+                "hint": "关闭后此群的审核功能将完全禁用"
+              },
               "notify_group_id": {
                 "description": "通知群号",
                 "type": "string",
@@ -295,6 +301,12 @@
                 "description": "群号",
                 "type": "string",
                 "hint": "要配置的群号（纯数字）"
+              },
+              "enabled": {
+                "description": "是否启用审核",
+                "type": "bool",
+                "default": true,
+                "hint": "关闭后此群的审核功能将完全禁用"
               },
               "notify_group_id": {
                 "description": "通知群号",

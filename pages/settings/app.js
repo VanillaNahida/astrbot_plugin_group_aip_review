@@ -451,14 +451,11 @@ function updateCardBadges(card, group, enabledGroups) {
   if (group.template_name) {
     badges.push({ cls: "group-card-badge", text: group.template_name });
   }
-  if (!group.is_default_group && enabledGroups.includes(String(group.group_id))) {
-    const cfg = group.config || {};
-    const textOn = cfg.enable_text_censor !== false;
-    const imageOn = cfg.enable_image_censor !== false;
-    if (!textOn && !imageOn) {
-      badges.push({ cls: "group-card-badge disabled", text: "已停用" });
-    } else {
+  if (!group.is_default_group) {
+    if (enabledGroups.includes(String(group.group_id))) {
       badges.push({ cls: "group-card-badge enabled", text: "已启用" });
+    } else {
+      badges.push({ cls: "group-card-badge disabled", text: "已停用" });
     }
   }
 
@@ -507,8 +504,8 @@ function renderEnabledGroupsInfo() {
   els.enabledGroupsInfo.style.display = "";
   els.enabledGroupsInfo.innerHTML = `
     <div class="section-head">
-      <div class="section-title">已启用审核的群</div>
-      <div class="section-hint">以下群号已开启内容审核（在 AstrBot WebUI 配置中管理）</div>
+      <div class="section-title">已配置审核策略的群</div>
+      <div class="section-hint">以下群号已单独配置了审核策略，若需启用停止配置请在群级别配置中开启对应开关</div>
     </div>
     <div class="enabled-groups-chips">
       ${enabledGroups.map((gid) => `<span class="group-card-badge enabled">${gid}</span>`).join(" ")}
@@ -548,10 +545,49 @@ function renderGroupForm(groupPayload) {
     els.deleteGroupBtn.style.display = "none";
     els.saveGroupBtn.textContent = "保存默认全局配置";
   } else {
-    // Per-group: show template schema
+    // Per-group: show template schema with enabled toggle at the top
     const schema = bootstrapData?.schema?.default || {};
     const config = groupPayload.config || {};
+
+    // Render schema fields first (this clears groupForm.innerHTML)
     renderSchemaFields(els.groupForm, schema, config);
+
+    // Build enabled toggle and prepend it to the field grid
+    const field = document.createElement("label");
+    field.className = "field checkbox-field";
+
+    const copy = document.createElement("div");
+    copy.className = "field-copy";
+    const label = document.createElement("div");
+    label.className = "field-label";
+    label.textContent = "是否启用审核";
+    copy.appendChild(label);
+    const hint = document.createElement("div");
+    hint.className = "field-hint";
+    hint.textContent = "关闭后此群的审核功能将完全禁用";
+    copy.appendChild(hint);
+    field.appendChild(copy);
+
+    const control = document.createElement("div");
+    control.className = "field-control";
+    const shell = document.createElement("span");
+    shell.className = "switch";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = config.enabled !== false;
+    input.dataset.path = "enabled";
+    input.dataset.type = "bool";
+    const slider = document.createElement("span");
+    slider.className = "slider";
+    shell.appendChild(input);
+    shell.appendChild(slider);
+    control.appendChild(shell);
+    field.appendChild(control);
+
+    const grid = els.groupForm.querySelector(".field-grid");
+    if (grid) {
+      grid.insertBefore(field, grid.firstChild);
+    }
 
     els.enabledGroupsInfo.style.display = "none";
     els.deleteGroupBtn.style.display = "";
@@ -612,6 +648,15 @@ async function saveGroupConfig() {
     Object.assign(bootstrapData.global_config, globalConfig);
   }
 
+  // Update enabled_groups locally based on all groups' enabled field
+  const newEnabled = [];
+  for (const g of allGroups) {
+    if (!g.is_default_group && g.config?.enabled !== false) {
+      newEnabled.push(String(g.group_id));
+    }
+  }
+  bootstrapData.enabled_groups = newEnabled;
+
   renderGroupCards();
   showToast("配置已保存");
 }
@@ -631,6 +676,19 @@ async function saveCurrentGroupSilent(group) {
     }
 
     await api.safePost("settings/group", requestBody);
+
+    // Update local state
+    if (group.config) {
+      group.config.enabled = disposalConfig.enabled !== false;
+    }
+    // Update enabled_groups locally
+    const newEnabled = [];
+    for (const g of allGroups) {
+      if (!g.is_default_group && g.config?.enabled !== false) {
+        newEnabled.push(String(g.group_id));
+      }
+    }
+    bootstrapData.enabled_groups = newEnabled;
   } catch {}
 }
 

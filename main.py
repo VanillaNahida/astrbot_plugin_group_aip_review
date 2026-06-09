@@ -263,7 +263,7 @@ class ViolationManager:
     "astrbot_plugin_group_aip_review",
     "VanillaNahida",
     "基于百度内容审核API的群聊内容安全审查插件",
-    "1.0.0"
+    "v1.1.1"
     )
 class GroupAipReviewPlugin(Star):
     """基于百度内容审核API的群聊内容安全审查插件"""
@@ -327,6 +327,19 @@ class GroupAipReviewPlugin(Star):
                     break
         
         return group_config
+    
+    def _is_group_enabled(self, group_id: str) -> bool:
+        """检查群是否启用审核（基于群级别配置中的 enabled 字段）"""
+        disposal_config = self.config.get("disposal", {})
+        group_custom = disposal_config.get("group_custom", [])
+        
+        if group_custom and isinstance(group_custom, list):
+            for custom_config in group_custom:
+                if custom_config.get("group_id") == group_id:
+                    return custom_config.get("enabled", True)
+        
+        # 没有群单独配置项，不启用
+        return False
     
     async def _send_notification(self, group_id: str, message: str, group_name: str = None, user_nickname: str = None, user_id: str = None, event: AstrMessageEvent = None, audit_data: AuditData = None):
         """发送通知消息"""
@@ -648,9 +661,8 @@ class GroupAipReviewPlugin(Star):
         if not group_id:
             return
         
-        # 检查是否在白名单中
-        enabled_groups = self.config.get("enabled_groups", [])
-        if not enabled_groups or group_id not in enabled_groups:
+        # 检查群级别配置中是否启用审核
+        if not self._is_group_enabled(group_id):
             return
 
         # 调试输出
@@ -767,19 +779,11 @@ class GroupAipReviewPlugin(Star):
                 return
 
         # 获取当前启用的群列表
-        enabled_groups = self.config.get("enabled_groups", [])
-        
-        # 检查是否已经在启用列表中
-        if group_id in enabled_groups:
+        if self._is_group_enabled(group_id):
             yield event.plain_result(f"本群({group_id})的内容审核已经开启")
             return
 
-        # 添加到启用列表
-        enabled_groups.append(group_id)
-        self.config["enabled_groups"] = enabled_groups
-        self.config.save_config()
-
-        # 检查是否存在群单独配置项
+        # 在群配置中启用审核
         disposal_config = self.config.get("disposal", {})
         group_custom = disposal_config.get("group_custom", [])
         has_group_config = False
@@ -787,8 +791,25 @@ class GroupAipReviewPlugin(Star):
         if group_custom and isinstance(group_custom, list):
             for custom_config in group_custom:
                 if custom_config.get("group_id") == group_id:
+                    custom_config["enabled"] = True
                     has_group_config = True
                     break
+        
+        if has_group_config:
+            disposal_config["group_custom"] = group_custom
+            self.config["disposal"] = disposal_config
+            self.config.save_config()
+        else:
+            # 创建新的群配置项
+            new_config = {
+                "group_id": group_id,
+                "enabled": True,
+                "__template_key": "default_group_config"
+            }
+            group_custom.append(new_config)
+            disposal_config["group_custom"] = group_custom
+            self.config["disposal"] = disposal_config
+            self.config.save_config()
 
         # 构建回复消息
         reply_msg = f"✅ 已成功开启本群({group_id})的内容审核"
@@ -829,16 +850,22 @@ class GroupAipReviewPlugin(Star):
                 return
 
         # 获取当前启用的群列表
-        enabled_groups = self.config.get("enabled_groups", [])
-        
-        # 检查是否在启用列表中
-        if group_id not in enabled_groups:
+        if not self._is_group_enabled(group_id):
             yield event.plain_result(f"本群({group_id})的内容审核已经关闭")
             return
 
-        # 从启用列表中移除
-        enabled_groups.remove(group_id)
-        self.config["enabled_groups"] = enabled_groups
+        # 在群配置中禁用审核
+        disposal_config = self.config.get("disposal", {})
+        group_custom = disposal_config.get("group_custom", [])
+        
+        if group_custom and isinstance(group_custom, list):
+            for custom_config in group_custom:
+                if custom_config.get("group_id") == group_id:
+                    custom_config["enabled"] = False
+                    break
+        
+        disposal_config["group_custom"] = group_custom
+        self.config["disposal"] = disposal_config
         self.config.save_config()
 
         yield event.plain_result(f"✅ 已成功关闭本群({group_id})的内容审核")
@@ -878,8 +905,7 @@ class GroupAipReviewPlugin(Star):
         group_config = self.get_group_config(group_id)
         
         # 检查是否启用
-        enabled_groups = self.config.get("enabled_groups", [])
-        is_enabled = group_id in enabled_groups
+        is_enabled = self._is_group_enabled(group_id)
 
         # 检查是否存在群单独配置项
         disposal_config = self.config.get("disposal", {})
