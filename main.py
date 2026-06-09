@@ -263,7 +263,7 @@ class ViolationManager:
     "astrbot_plugin_group_aip_review",
     "VanillaNahida",
     "基于百度内容审核API的群聊内容安全审查插件",
-    "v1.1.1"
+    "v1.2.0"
     )
 class GroupAipReviewPlugin(Star):
     """基于百度内容审核API的群聊内容安全审查插件"""
