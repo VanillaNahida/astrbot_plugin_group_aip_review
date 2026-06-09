@@ -1,14 +1,13 @@
 import asyncio
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 from collections import defaultdict
-from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
-from astrbot.api.message_components import Image, Plain, Node
+from astrbot.api.message_components import Image
 from astrbot.api.star import Context, Star, register
 
 from .web import AuditWebController
@@ -355,7 +354,6 @@ class GroupAipReviewPlugin(Star):
                 else:
                     # 否则使用普通消息通知
                     # 获取所有平台实例
-                    from astrbot.api.platform import Platform
                     platforms = self.context.platform_manager.get_insts()
                     
                     # 遍历所有平台，找到支持发送群消息的平台
@@ -377,7 +375,6 @@ class GroupAipReviewPlugin(Star):
         """发送私聊消息"""
         try:
             # 获取所有平台实例
-            from astrbot.api.platform import Platform
             platforms = self.context.platform_manager.get_insts()
             
             # 遍历所有平台，找到支持发送私聊消息的平台
@@ -397,7 +394,6 @@ class GroupAipReviewPlugin(Star):
         """发送合并转发消息"""
         try:
             # 获取所有平台实例
-            from astrbot.api.platform import Platform
             platforms = self.context.platform_manager.get_insts()
             
             # 遍历所有平台，找到支持发送合并转发消息的平台
@@ -671,7 +667,7 @@ class GroupAipReviewPlugin(Star):
         # 检查用户权限（bot管理员、群主、管理员跳过审核）
         # 直接从原始消息的role字段检查权限
         if event.is_admin():
-            logger.debug(f"用户为Bot管理员，跳过审核")
+            logger.debug("用户为Bot管理员，跳过审核")
             return
         
         # 检查群权限（群主、管理员跳过审核）
@@ -770,7 +766,7 @@ class GroupAipReviewPlugin(Star):
         
         # 检查用户权限（bot管理员、群主、管理员跳过审核）
         if event.is_admin():
-            logger.debug(f"用户为Bot管理员，跳过审核")
+            logger.debug("用户为Bot管理员，跳过审核")
         else:
             # 检查群权限（群主、管理员跳过审核）
             sender_role = event.message_obj.raw_message.get("sender", {}).get("role", "member") if event.message_obj.raw_message else "member"
@@ -841,7 +837,7 @@ class GroupAipReviewPlugin(Star):
         
         # 检查用户权限（bot管理员、群主、管理员跳过审核）
         if event.is_admin():
-            logger.debug(f"用户为Bot管理员，跳过审核")
+            logger.debug("用户为Bot管理员，跳过审核")
         else:
             # 检查群权限（群主、管理员跳过审核）
             sender_role = event.message_obj.raw_message.get("sender", {}).get("role", "member") if event.message_obj.raw_message else "member"
@@ -893,7 +889,7 @@ class GroupAipReviewPlugin(Star):
         
         # 检查用户权限（bot管理员、群主、管理员跳过审核）
         if event.is_admin():
-            logger.debug(f"用户为Bot管理员，跳过审核")
+            logger.debug("用户为Bot管理员，跳过审核")
         else:
             # 检查群权限（群主、管理员跳过审核）
             sender_role = event.message_obj.raw_message.get("sender", {}).get("role", "member") if event.message_obj.raw_message else "member"
@@ -919,7 +915,7 @@ class GroupAipReviewPlugin(Star):
                     break
 
         # 构建配置信息
-        config_info = f"📋 群聊内容审核配置\n"
+        config_info = "📋 群聊内容审核配置\n"
         config_info += f"群号：{group_id}\n"
         config_info += f"状态：{'✅已开启' if is_enabled else '❌已关闭'}\n\n"
         
