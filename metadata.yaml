@@ -4,3 +4,4 @@ desc: 让我康康你的消息正不正常喵？基于百度内容审核API对�
 version: v1.1.0 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: 香草味的纳西妲喵（VanillaNahida） # 作者
 repo: https://github.com/VanillaNahida/astrbot_plugin_group_aip_review # 插件的仓库地址
+astrbot_version: ">=4.24.2" # 插件依赖的AstrBot版本范围
