@@ -9,6 +9,7 @@
     --bg: #ffffff;
     --bg-accent: rgba(110, 177, 216, 0.18);
     --text: #1e2a38;
+    --text-primary: #1f1f1f;
     --muted: #5a7088;
     --line: rgba(110, 177, 216, 0.2);
     --accent: #6EB1D8;
@@ -30,6 +31,7 @@
     --bg: #11161d;
     --bg-accent: rgba(110, 177, 216, 0.1);
     --text: #e7edf5;
+    --text-primary: #e7edf5;
     --muted: #9eacbd;
     --line: rgba(110, 177, 216, 0.12);
     --accent: #6EB1D8;
@@ -267,7 +269,7 @@ select {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #1f1f1f;
+    color: var(--text-primary);
 }
 
 .group-card-badge {
@@ -277,7 +279,7 @@ select {
     padding: 2px 8px;
     font-size: 10px;
     background: var(--accent-soft);
-    color: #1f1f1f;
+    color: var(--text-primary);
     flex-shrink: 0;
 }
 
@@ -341,7 +343,7 @@ select {
     font-weight: 700;
     font-size: 16px;
     font-family: Georgia, "Noto Serif SC", serif;
-    color: #1f1f1f;
+    color: var(--text-primary);
     letter-spacing: 0.02em;
     line-height: 1.3;
     min-width: 0;
@@ -407,7 +409,7 @@ select {
 .field-label {
     font-weight: 600;
     font-size: 14px;
-    color: #1f1f1f;
+    color: var(--text-primary);
 }
 
 .field-hint {
@@ -508,7 +510,7 @@ select {
 
 .ghost-button {
     background: rgba(110, 177, 216, 0.08);
-    color: #1f1f1f;
+    color: var(--text-primary);
 }
 
 .primary-button:hover,
@@ -575,7 +577,7 @@ select {
     font-size: 14px;
     font-weight: 600;
     font-family: Georgia, "Noto Serif SC", serif;
-    color: #1f1f1f;
+    color: var(--text-primary);
     letter-spacing: 0.02em;
     line-height: 1.45;
 }
