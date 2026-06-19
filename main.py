@@ -148,6 +148,8 @@ class AuditResultParser:
         """解析文本审核结果"""
         if "error" in result:
             return "审核失败", result["error"]
+        if "error_code" in result:
+            return "审核失败", f"百度API错误({result.get('error_code','')}): {result.get('error_msg','未知错误')}"
         
         conclusion = result.get("conclusion", "")
         data = result.get("data", [])
@@ -168,7 +170,9 @@ class AuditResultParser:
             reason_text = ", ".join(reasons) if reasons else "内容疑似违规，需要人工审核"
             return "疑似", reason_text
         else:
-            return "审核失败", "未知审核结果"
+            import logging
+            logging.getLogger("astrbot").error(f"【AIP审核调试】百度API返回的原始结果: {result}")
+            return "审核失败", f"未知审核结果(conclusion={conclusion})"
     
     @staticmethod
     def parse_image_result(result: Dict) -> Tuple[str, str]:
